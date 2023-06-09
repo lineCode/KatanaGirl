@@ -19,6 +19,9 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	// Draws different debug shapes to assist in game development
+	void DrawDebugShapes();
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
