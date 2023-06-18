@@ -6,11 +6,14 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GroomComponent.h"
+#include "Item.h"
+#include "Weapon.h"
 
 // Sets default values
 AKatanaCharacter::AKatanaCharacter() :
 	BaseTurnRate(70.f),
 	BaseLookUpRate(70.f)
+	// CharacterState(ECharacterState::ECS_Unequipped)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -81,11 +84,20 @@ void AKatanaCharacter::LookUpAtRate(float Rate)
 	AddControllerPitchInput(Rate * BaseLookUpRate * DeltaTime);
 }
 
+void AKatanaCharacter::EKeyPressed()
+{
+	AWeapon* OverlappingWeapon = Cast<AWeapon>(OverlappingItem);
+	if (OverlappingWeapon)
+	{
+		OverlappingWeapon->EquipWeapon(GetMesh(), FName("RightHandSocket"));
+		CharacterState = ECharacterState::ECS_Equipped;
+	}
+}
+
 // Called every frame
 void AKatanaCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 // Called to bind functionality to input
@@ -95,6 +107,7 @@ void AKatanaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 	PlayerInputComponent->BindAction(FName("Jump"), IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction(FName("Jump"), IE_Released, this, &ACharacter::StopJumping);
+	PlayerInputComponent->BindAction(FName("Equip"), IE_Pressed, this, &AKatanaCharacter::EKeyPressed);
 
 	PlayerInputComponent->BindAxis(FName("MoveForward"), this, &AKatanaCharacter::MoveForward);
 	PlayerInputComponent->BindAxis(FName("MoveRight"), this, &AKatanaCharacter::MoveRight);

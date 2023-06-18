@@ -4,11 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "CharacterTypes.h"
 #include "KatanaCharacter.generated.h"
 
 class USpringArmComponent;
 class UCameraComponent;
 class UGroomComponent;
+class AItem;
 
 UCLASS()
 class KATANAGIRL_API AKatanaCharacter : public ACharacter
@@ -41,6 +43,9 @@ protected:
 	// Called to look up and down with mouse wheel y
 	void LookUpAtRate(float Value);
 
+	// Called to allow the Character to pickup a Weapon
+	void EKeyPressed();
+
 private:
 	float BaseTurnRate, BaseLookUpRate;
 
@@ -56,7 +61,16 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Hair, meta = (AllowPrivateAccess = "true"))
 	UGroomComponent* Eyebrows;
 
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Category = Weapon, meta = (AllowPrivateAccess = "true"))
+	AItem* OverlappingItem;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	ECharacterState CharacterState;
+
 public:	
 	// Getters for private variables
+	FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }
 
+	// Setters for private variables
+	FORCEINLINE void SetOverlappingItem(AItem* Item) { OverlappingItem = Item; }
 };
