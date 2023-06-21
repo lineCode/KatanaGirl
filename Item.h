@@ -8,6 +8,13 @@
 
 class USphereComponent;
 
+UENUM(BlueprintType)
+enum class EItemState : uint8
+{
+	EIS_Hovering UMETA(DisplayName = "Hovering"),
+	EIS_Equipped UMETA(DisplayName = "Equipped")
+};
+
 UCLASS()
 class KATANAGIRL_API AItem : public AActor
 {
@@ -48,6 +55,9 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sine Parameters", meta = (AllowPrivateAccess))
 	float TimeConstant;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess))
+	EItemState ItemState;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Static Mesh", meta = (AllowPrivateAccess))
 	UStaticMeshComponent* ItemMesh;
 
@@ -56,6 +66,11 @@ private:
 
 public:	
 	// Getters for privatee variables
+	FORCEINLINE EItemState GetItemState() const { return ItemState; }
+	FORCEINLINE USphereComponent* GetSphere() const { return Sphere; }
 	FORCEINLINE UStaticMeshComponent* GetItemMesh() const { return ItemMesh; }
+
+	// Setters for private variables
+	FORCEINLINE void SetItemState(EItemState State) { ItemState = State; }
 
 };

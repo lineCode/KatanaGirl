@@ -8,12 +8,15 @@
 #include "GroomComponent.h"
 #include "Item.h"
 #include "Weapon.h"
+#include "Animation/AnimMontage.h"
 
 // Sets default values
 AKatanaCharacter::AKatanaCharacter() :
 	BaseTurnRate(70.f),
-	BaseLookUpRate(70.f)
-	// CharacterState(ECharacterState::ECS_Unequipped)
+	BaseLookUpRate(70.f),
+	CharacterState(ECharacterState::ECS_Unequipped),
+	ActionState(EActionState::EAS_Unoccupied),
+	CarryingWeapon(false)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -52,6 +55,8 @@ void AKatanaCharacter::BeginPlay()
 
 void AKatanaCharacter::MoveForward(float Value)
 {
+	if (ActionState != EActionState::EAS_Unoccupied) return;
+
 	if (GetController() && Value != 0.f)
 	{
 		const FRotator ControlRotation = GetControlRotation(), YawRotation(0.f, ControlRotation.Yaw, 0.f);
@@ -63,6 +68,8 @@ void AKatanaCharacter::MoveForward(float Value)
 
 void AKatanaCharacter::MoveRight(float Value)
 {
+	if (ActionState != EActionState::EAS_Unoccupied) return;
+
 	if (GetController() && Value != 0.f)
 	{
 		const FRotator ControlRotation = GetControlRotation(), YawRotation(0.f, ControlRotation.Yaw, 0.f);
@@ -87,9 +94,93 @@ void AKatanaCharacter::LookUpAtRate(float Rate)
 void AKatanaCharacter::EKeyPressed()
 {
 	AWeapon* OverlappingWeapon = Cast<AWeapon>(OverlappingItem);
-	if (OverlappingWeapon)
+	if (OverlappingWeapon && !CarryingWeapon)
 	{
 		OverlappingWeapon->EquipWeapon(GetMesh(), FName("RightHandSocket"));
+		CharacterState = ECharacterState::ECS_Equipped;
+		OverlappingItem = nullptr;
+		EquippedWeapon = OverlappingWeapon;
+		CarryingWeapon = true;
+	}
+	else
+	{
+		if (ActionState == EActionState::EAS_Unoccupied && CharacterState != ECharacterState::ECS_Unequipped && CarryingWeapon)
+		{
+			PlayEquipMontage(FName("Unequip"));
+			CharacterState = ECharacterState::ECS_Unequipped;
+			ActionState = EActionState::EAS_Equipping;
+		}
+		else if (ActionState == EActionState::EAS_Unoccupied && CharacterState == ECharacterState::ECS_Unequipped && CarryingWeapon)
+		{
+			PlayEquipMontage(FName("Equip"));
+			CharacterState = ECharacterState::ECS_Equipped;
+			ActionState = EActionState::EAS_Equipping;
+		}
+	}
+}
+
+void AKatanaCharacter::Attack()
+{
+	if (CharacterState == ECharacterState::ECS_Unequipped) return;
+
+	if (ActionState == EActionState::EAS_Unoccupied)
+	{
+		PlayAttackMontage();
+		ActionState = EActionState::EAS_Attacking;
+	}
+}
+
+void AKatanaCharacter::FinishAttacking()
+{
+	ActionState = EActionState::EAS_Unoccupied;
+}
+
+void AKatanaCharacter::PlayAttackMontage()
+{
+	auto AnimInstance = GetMesh()->GetAnimInstance();
+	const int32 Selection = FMath::RandRange(0, 1);
+	FName SectionName = FName();
+	switch (Selection)
+	{
+	case 0:
+		SectionName = FName("Attack1");
+		break;
+	case 1:
+		SectionName = FName("Attack2");
+		break;
+	}
+
+	if (AnimInstance && AttackMontage)
+	{
+		AnimInstance->Montage_Play(AttackMontage);
+		AnimInstance->Montage_JumpToSection(SectionName, AttackMontage);
+	}
+}
+
+void AKatanaCharacter::PlayEquipMontage(FName SectionName)
+{
+	auto AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && EquipMontage)
+	{
+		AnimInstance->Montage_Play(EquipMontage);
+		AnimInstance->Montage_JumpToSection(SectionName, EquipMontage);
+	}
+}
+
+void AKatanaCharacter::DisarmWeapon()
+{
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->AttackMeshToSocket(GetMesh(), FName("SpineSocket"));
+		CharacterState = ECharacterState::ECS_Unequipped;
+	}
+}
+
+void AKatanaCharacter::ArmWeapon()
+{
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->AttackMeshToSocket(GetMesh(), FName("RightHandSocket"));
 		CharacterState = ECharacterState::ECS_Equipped;
 	}
 }
@@ -108,6 +199,7 @@ void AKatanaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAction(FName("Jump"), IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction(FName("Jump"), IE_Released, this, &ACharacter::StopJumping);
 	PlayerInputComponent->BindAction(FName("Equip"), IE_Pressed, this, &AKatanaCharacter::EKeyPressed);
+	PlayerInputComponent->BindAction(FName("Attack"), IE_Pressed, this, &AKatanaCharacter::Attack);
 
 	PlayerInputComponent->BindAxis(FName("MoveForward"), this, &AKatanaCharacter::MoveForward);
 	PlayerInputComponent->BindAxis(FName("MoveRight"), this, &AKatanaCharacter::MoveRight);

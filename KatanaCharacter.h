@@ -11,6 +11,8 @@ class USpringArmComponent;
 class UCameraComponent;
 class UGroomComponent;
 class AItem;
+class UAnimMontage;
+class AWeapon;
 
 UCLASS()
 class KATANAGIRL_API AKatanaCharacter : public ACharacter
@@ -46,8 +48,29 @@ protected:
 	// Called to allow the Character to pickup a Weapon
 	void EKeyPressed();
 
+	// Called to allow Character to attack Enemies
+	void Attack();
+
+	// Called from Montage to set ActionState to Unoccupied
+	UFUNCTION(BlueprintCallable)
+	void FinishAttacking();
+
+	// Plays attack Montage when Action State is Unoccupied
+	void PlayAttackMontage();
+
+	void PlayEquipMontage(FName SectionName);
+
+	UFUNCTION(BlueprintCallable)
+	void DisarmWeapon();
+
+	UFUNCTION(BlueprintCallable)
+	void ArmWeapon();
+
 private:
 	float BaseTurnRate, BaseLookUpRate;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon, meta = (AllowPrivateAccess = "true"))
+	bool CarryingWeapon;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	USpringArmComponent* CameraBoom;
@@ -66,6 +89,18 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	ECharacterState CharacterState;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	EActionState ActionState;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* AttackMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* EquipMontage;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon, meta = (AllowPrivateAccess = "true"))
+	AWeapon* EquippedWeapon;
 
 public:	
 	// Getters for private variables
